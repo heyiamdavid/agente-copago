@@ -1,6 +1,6 @@
 """Orquestación del agente: síntoma → especialidad → herramientas de copago/red.
 
-Usa el framework Agno con el modelo Groq llama-3.3-70b-versatile.
+Usa el framework Agno con el modelo Groq openai/gpt-oss-120b.
 El agente tiene tres herramientas:
   - get_patient_plan_tool     → obtiene datos del plan desde Notion
   - calculate_copay_tool      → calcula el copago real
@@ -89,15 +89,18 @@ def build_agent(session_id: str | None = None) -> Agent:
         model=Groq(
             id=settings.groq_model,
             api_key=settings.groq_api_key,
+            temperature=1,
+            top_p=1,
+            max_tokens=1024,
+            request_params={"reasoning_effort": "medium"},
         ),
-        system_prompt=SYSTEM_PROMPT,
+        system_message=SYSTEM_PROMPT,
         tools=[
             get_patient_plan_tool,
             calculate_copay_tool,
             get_network_hospitals_tool,
         ],
         markdown=False,
-        show_tool_calls=False,
         session_id=session_id,
     )
 

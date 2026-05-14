@@ -7,7 +7,7 @@ from app.schemas.patient import ChatRequest, ChatResponse
 router = APIRouter()
 
 
-@router.post("/", response_model=ChatResponse, summary="Enviar mensaje al agente")
+@router.post("", response_model=ChatResponse, summary="Enviar mensaje al agente")
 async def chat_message(body: ChatRequest) -> ChatResponse:
     """
     Recibe un mensaje del usuario y lo procesa con el agente Agno+Groq.

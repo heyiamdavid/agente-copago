@@ -12,7 +12,12 @@ class Settings(BaseSettings):
     # Modelo Groq a usar
     groq_model: str = "llama-3.3-70b-versatile"
     # CORS
-    cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    cors_origins: list[str] = [
+        "http://localhost:5173", 
+        "http://127.0.0.1:5173",
+        "https://app.agno.com",
+        "https://os.agno.com"
+    ]
 
     class Config:
         env_file = ".env"

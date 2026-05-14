@@ -33,3 +33,17 @@ app.include_router(api_router)
 def health():
     """Verificación de estado del servidor."""
     return {"status": "ok", "service": "copay-estimator"}
+
+# ── Integración con Agno AgentOS Dashboard ────────────────────────────────────
+from agno.os import AgentOS
+from app.agent.copay_agent import build_agent
+
+agent_os = AgentOS(
+    name="Copay Agent OS",
+    agents=[build_agent()],
+    base_app=app,
+    cors_allowed_origins=settings.cors_origins,
+)
+
+# Reemplazamos app con la versión mejorada por AgentOS
+app = agent_os.get_app()

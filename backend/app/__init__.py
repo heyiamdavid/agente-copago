@@ -1,0 +1,1 @@
+# Estimador agéntico — backend FastAPI

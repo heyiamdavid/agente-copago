@@ -161,7 +161,7 @@ export function ChatPage() {
           <div className="header-brand">
             <div className="header-logo">🏥</div>
             <div>
-              <div className="header-title">CopayBot</div>
+              <div className="header-title">Asistente Morgan</div>
               <div className="header-subtitle">Estimador de copago y cobertura</div>
             </div>
           </div>
@@ -188,19 +188,18 @@ export function ChatPage() {
             )}
             <div className="header-status">
               <div
-                className={`status-dot ${
-                  backendStatus === "online"
+                className={`status-dot ${backendStatus === "online"
                     ? "online"
                     : backendStatus === "offline"
-                    ? "offline"
-                    : ""
-                }`}
+                      ? "offline"
+                      : ""
+                  }`}
               />
               {backendStatus === "checking"
                 ? "Verificando…"
                 : backendStatus === "online"
-                ? "Servidor en línea"
-                : "Servidor no disponible"}
+                  ? "Servidor en línea"
+                  : "Servidor no disponible"}
             </div>
           </div>
         </header>

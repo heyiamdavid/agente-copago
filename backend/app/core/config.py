@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     notion_db_copay: str = ""          # DB de tabla de copagos
     # Modelo Groq a usar
     groq_model: str = "llama-3.3-70b-versatile"
-    # CORS
+    # CORS (Separados por comas en el .env)
     cors_origins: list[str] = [
         "http://localhost:5173", 
         "http://127.0.0.1:5173",

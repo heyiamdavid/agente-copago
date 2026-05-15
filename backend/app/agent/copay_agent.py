@@ -13,6 +13,7 @@ import logging
 
 from agno.agent import Agent
 from agno.models.groq import Groq
+from agno.storage.agent.sqlite import SqliteAgentStorage
 
 from app.agent.prompts.system_prompt import SYSTEM_PROMPT
 from app.core.config import settings
@@ -25,7 +26,6 @@ from app.services.hospital_network import rank_hospitals
 from app.services.insurance import calculate_copay
 
 logger = logging.getLogger(__name__)
-
 
 # ── Herramientas para el agente ───────────────────────────────────────────────
 
@@ -84,7 +84,7 @@ async def get_network_hospitals_tool(especialidad: str) -> str:
 # ── Construcción del agente ───────────────────────────────────────────────────
 
 def build_agent(session_id: str | None = None) -> Agent:
-    """Construye y retorna un agente Agno con Groq y las herramientas necesarias."""
+    """Construye y retorna un agente Agno con Groq, herramientas necesarias y persistencia en SQLite."""
     return Agent(
         model=Groq(
             id=settings.groq_model,
@@ -99,6 +99,8 @@ def build_agent(session_id: str | None = None) -> Agent:
             calculate_copay_tool,
             get_network_hospitals_tool,
         ],
+        storage=SqliteAgentStorage(table_name="agent_sessions", db_file="agent_storage.db"),
+        add_history_to_messages=True,
         markdown=False,
         session_id=session_id,
     )

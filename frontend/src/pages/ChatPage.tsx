@@ -166,24 +166,14 @@ export function ChatPage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <div className="flex-center-gap">
             {messages.length > 0 && (
               <button
                 onClick={resetChat}
                 title="Nueva conversación"
-                style={{
-                  background: "var(--bg-card)",
-                  border: "1px solid var(--border-subtle)",
-                  borderRadius: "var(--radius-md)",
-                  color: "var(--text-secondary)",
-                  padding: "0.4rem 0.75rem",
-                  cursor: "pointer",
-                  fontSize: "0.75rem",
-                  fontFamily: "inherit",
-                  transition: "var(--transition)",
-                }}
+                className="new-session-btn"
               >
-                🔄 Nueva sesión
+                Nueva sesión
               </button>
             )}
             <div className="header-status">
@@ -207,7 +197,6 @@ export function ChatPage() {
         {/* Patient ID bar */}
         <div className="patient-bar">
           <div className="patient-bar-inner">
-            <span className="patient-bar-icon">🪪</span>
             <span className="patient-bar-label">ID Paciente</span>
             <input
               id="patient-id-input"
@@ -287,8 +276,8 @@ export function ChatPage() {
             </button>
           </div>
           <p className="input-hint">
-            Presiona <kbd style={{ fontFamily: "monospace", opacity: 0.7 }}>Enter</kbd> para enviar ·{" "}
-            <kbd style={{ fontFamily: "monospace", opacity: 0.7 }}>Shift+Enter</kbd> para salto de línea
+            Presiona <kbd className="kbd-hint">Enter</kbd> para enviar ·{" "}
+            <kbd className="kbd-hint">Shift+Enter</kbd> para salto de línea
           </p>
         </div>
 

@@ -21,6 +21,7 @@ from app.integrations.notion import (
     get_copay_for_plan,
     get_hospitals_by_specialty,
     get_patient_plan,
+    create_patient_in_notion,
 )
 from app.services.hospital_network import rank_hospitals
 from app.services.insurance import calculate_copay
@@ -28,6 +29,26 @@ from app.services.insurance import calculate_copay
 logger = logging.getLogger(__name__)
 
 # ── Herramientas para el agente ───────────────────────────────────────────────
+
+async def register_patient_tool(patient_id: str, nombre: str, plan_nombre: str) -> str:
+    """
+    Registra a un nuevo paciente en la base de datos de Notion.
+    Usa esta herramienta cuando un paciente intente consultar su cobertura
+    pero su ID no se encuentre en la base de datos.
+
+    Args:
+        patient_id: Número de identidad proporcionado por el usuario.
+        nombre: Nombre completo del paciente.
+        plan_nombre: Nombre del plan de seguro médico (ej. Bupa, Saludsa, etc).
+
+    Returns:
+        JSON con el resultado del registro.
+    """
+    result = await create_patient_in_notion(patient_id, nombre, plan_nombre)
+    if result is None:
+        return json.dumps({"error": "No se pudo registrar al paciente debido a un error técnico."})
+    return json.dumps({"status": "success", "message": "Paciente registrado exitosamente.", "data": result}, ensure_ascii=False)
+
 
 async def get_patient_plan_tool(patient_id: str) -> str:
     """
@@ -41,7 +62,7 @@ async def get_patient_plan_tool(patient_id: str) -> str:
     """
     result = await get_patient_plan(patient_id)
     if result is None:
-        return json.dumps({"error": f"No se encontró el paciente: {patient_id}"})
+        return json.dumps({"error": f"No se encontró el paciente: {patient_id}. Por favor, pregúntale su nombre y plan para registrarlo usando register_patient_tool."})
     return json.dumps(result, ensure_ascii=False)
 
 
@@ -95,6 +116,7 @@ def build_agent(session_id: str | None = None) -> Agent:
         ),
         system_message=SYSTEM_PROMPT,
         tools=[
+            register_patient_tool,
             get_patient_plan_tool,
             calculate_copay_tool,
             get_network_hospitals_tool,

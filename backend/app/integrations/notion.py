@@ -122,6 +122,37 @@ async def get_patient_plan(patient_id: str) -> dict | None:
     }
 
 
+async def create_patient_in_notion(patient_id: str, nombre: str, plan_nombre: str) -> dict | None:
+    """Crea una nueva fila en la base de datos de pacientes de Notion."""
+    if not settings.notion_db_patients:
+        logger.warning("Notion DB ID not configured; cannot create patient.")
+        return None
+
+    url = f"{NOTION_API_BASE}/pages"
+    body = {
+        "parent": {"database_id": settings.notion_db_patients},
+        "properties": {
+            "patient_id": {"title": [{"text": {"content": patient_id}}]},
+            "nombre": {"rich_text": [{"text": {"content": nombre}}]},
+            "plan_id": {"rich_text": [{"text": {"content": "PLAN_NUEVO"}}]},
+            "plan_nombre": {"rich_text": [{"text": {"content": plan_nombre}}]},
+            "deducible_anual": {"number": 0},
+            "deducible_cubierto": {"number": 0},
+            "copago_base": {"number": 0},
+        }
+    }
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        try:
+            resp = await client.post(url, headers=_headers(), json=body)
+            resp.raise_for_status()
+            logger.info(f"Paciente {patient_id} registrado exitosamente en Notion.")
+            return await get_patient_plan(patient_id)
+        except Exception as e:
+            logger.error(f"Error creando paciente en Notion: {e}")
+            return None
+
+
 async def get_copay_for_plan(plan_id: str, especialidad: str) -> dict | None:
     """Retorna el copago configurado para un plan + especialidad."""
     rows = await _query_database(

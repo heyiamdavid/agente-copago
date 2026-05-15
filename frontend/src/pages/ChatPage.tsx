@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import type { KeyboardEvent, ChangeEvent } from "react";
 import { sendChatMessage, checkBackendHealth } from "@/services/api";
 import type { Message, Session } from "@/types";
+import morganAvatar from "@/assets/asistente_morgan.png";
 
 /* ── Tiny helpers ─────────────────────────────────────────────────────────── */
 
@@ -23,7 +24,9 @@ const QUICK_CHIPS = [
 function TypingIndicator() {
   return (
     <div className="typing-indicator">
-      <div className="message-avatar assistant">🤖</div>
+      <div className="message-avatar assistant">
+        <img src={morganAvatar} alt="Morgan" className="avatar-image" />
+      </div>
       <div className="typing-bubble">
         <div className="typing-dot" />
         <div className="typing-dot" />
@@ -41,7 +44,11 @@ function MessageBubble({ msg }: MessageBubbleProps) {
   return (
     <div className={`message-wrapper ${msg.role}`}>
       <div className={`message-avatar ${msg.role}`}>
-        {msg.role === "assistant" ? "🤖" : "👤"}
+        {msg.role === "assistant" ? (
+          <img src={morganAvatar} alt="Morgan" className="avatar-image" />
+        ) : (
+          "👤"
+        )}
       </div>
       <div>
         <div className={`message-bubble ${msg.role}`}>{msg.content}</div>
@@ -164,10 +171,6 @@ export function ChatPage() {
     }
   };
 
-  const handlePatientIdChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSession((s) => ({ ...s, patientId: e.target.value || null }));
-  };
-
   const resetChat = () => {
     setMessages([]);
     setSession({ id: null, patientId: session.patientId });
@@ -182,7 +185,9 @@ export function ChatPage() {
         {/* Header */}
         <header className="app-header">
           <div className="header-brand">
-            <div className="header-logo">🏥</div>
+            <div className="header-logo logo-hidden-overflow">
+              <img src={morganAvatar} alt="Morgan" className="avatar-image square" />
+            </div>
             <div>
               <div className="header-title">Asistente Morgan</div>
               <div className="header-subtitle">Estimador de copago y cobertura</div>
@@ -222,13 +227,12 @@ export function ChatPage() {
           <div className="patient-bar">
             <div className="patient-bar-inner">
               <span className="patient-bar-label">ID Paciente</span>
-              <span className="patient-bar-input" style={{ opacity: 0.7 }}>
+              <span className="patient-bar-input text-opacity-70">
                 {session.patientId}
               </span>
               <span className="patient-bar-badge">✓ Verificado</span>
               <button 
-                className="new-session-btn" 
-                style={{ marginLeft: "auto", padding: "4px 8px", fontSize: "0.8rem" }}
+                className="new-session-btn ml-auto"
                 onClick={() => setSession({ id: null, patientId: null })}
               >
                 Cambiar ID
@@ -246,11 +250,10 @@ export function ChatPage() {
               <p className="welcome-desc">
                 Para poder consultar tu cobertura, calcular deducibles y buscar hospitales en red, por favor ingresa tu número de identidad o ID de paciente.
               </p>
-              <div style={{ marginTop: "2rem", width: "100%", maxWidth: "400px", display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div className="welcome-login-box">
                 <input
                   type="text"
-                  className="patient-bar-input"
-                  style={{ width: "100%", padding: "12px 16px", borderRadius: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white" }}
+                  className="patient-bar-input welcome-input"
                   placeholder="Ej: 0923847582"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && e.currentTarget.value.trim()) {
@@ -258,7 +261,7 @@ export function ChatPage() {
                     }
                   }}
                 />
-                <p className="input-hint" style={{ textAlign: "center" }}>
+                <p className="input-hint text-center">
                   Escribe tu ID y presiona <kbd className="kbd-hint">Enter</kbd> para comenzar
                 </p>
               </div>

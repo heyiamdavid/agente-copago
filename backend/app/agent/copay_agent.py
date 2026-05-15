@@ -99,7 +99,7 @@ def build_agent(session_id: str | None = None) -> Agent:
             calculate_copay_tool,
             get_network_hospitals_tool,
         ],
-        db=SqliteDb(table_name="agent_sessions", db_file="agent_storage.db"),
+        db=SqliteDb(db_file="agent_storage.db"),
         add_history_to_context=True,
         markdown=False,
         session_id=session_id,

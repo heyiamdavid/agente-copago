@@ -217,35 +217,58 @@ export function ChatPage() {
           </div>
         </header>
 
-        {/* Patient ID bar */}
-        <div className="patient-bar">
-          <div className="patient-bar-inner">
-            <span className="patient-bar-label">ID Paciente</span>
-            <input
-              id="patient-id-input"
-              type="text"
-              className="patient-bar-input"
-              placeholder="Ingresa tu ID de paciente (opcional)"
-              value={session.patientId ?? ""}
-              onChange={handlePatientIdChange}
-              autoComplete="off"
-            />
-            {session.patientId && (
-              <span className="patient-bar-badge">✓ Guardado</span>
-            )}
+        {/* Patient ID bar (solo visible si hay ID) */}
+        {session.patientId && (
+          <div className="patient-bar">
+            <div className="patient-bar-inner">
+              <span className="patient-bar-label">ID Paciente</span>
+              <span className="patient-bar-input" style={{ opacity: 0.7 }}>
+                {session.patientId}
+              </span>
+              <span className="patient-bar-badge">✓ Verificado</span>
+              <button 
+                className="new-session-btn" 
+                style={{ marginLeft: "auto", padding: "4px 8px", fontSize: "0.8rem" }}
+                onClick={() => setSession({ id: null, patientId: null })}
+              >
+                Cambiar ID
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Chat area */}
         <main className="chat-area" id="chat-area">
-          {messages.length === 0 ? (
+          {!session.patientId ? (
             <div className="welcome-screen">
               <div className="welcome-icon">🏥</div>
-              <h1 className="welcome-title">¿Cómo puedo ayudarte hoy?</h1>
+              <h1 className="welcome-title">Bienvenido al Asistente Morgan</h1>
               <p className="welcome-desc">
-                Cuéntame tu síntoma y te indicaré la especialidad adecuada,
-                cuánto será tu copago exacto y qué hospital de tu red te
-                conviene más.
+                Para poder consultar tu cobertura, calcular deducibles y buscar hospitales en red, por favor ingresa tu número de identidad o ID de paciente.
+              </p>
+              <div style={{ marginTop: "2rem", width: "100%", maxWidth: "400px", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <input
+                  type="text"
+                  className="patient-bar-input"
+                  style={{ width: "100%", padding: "12px 16px", borderRadius: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white" }}
+                  placeholder="Ej: 0923847582"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                      setSession((s) => ({ ...s, patientId: e.currentTarget.value.trim() }));
+                    }
+                  }}
+                />
+                <p className="input-hint" style={{ textAlign: "center" }}>
+                  Escribe tu ID y presiona <kbd className="kbd-hint">Enter</kbd> para comenzar
+                </p>
+              </div>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="welcome-screen">
+              <div className="welcome-icon">👋</div>
+              <h1 className="welcome-title">¡Hola! ¿Cómo puedo ayudarte hoy?</h1>
+              <p className="welcome-desc">
+                Ya tengo tu ID de paciente. Cuéntame tu síntoma o pregunta y te indicaré la especialidad, tu copago y los hospitales de tu red.
               </p>
               <div className="welcome-chips">
                 {QUICK_CHIPS.map((chip) => (
@@ -271,38 +294,40 @@ export function ChatPage() {
           <div ref={bottomRef} />
         </main>
 
-        {/* Input area */}
-        <div className="input-area">
-          <div className="input-container">
-            <textarea
-              ref={textareaRef}
-              id="chat-input"
-              className="message-input"
-              placeholder="Describe tu síntoma o pregunta sobre tu cobertura…"
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              rows={1}
-              disabled={loading}
-            />
-            <button
-              id="send-btn"
-              className="send-btn"
-              onClick={() => send(input)}
-              disabled={!input.trim() || loading}
-              title="Enviar (Enter)"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </button>
+        {/* Input area (solo visible si hay ID) */}
+        {session.patientId && (
+          <div className="input-area">
+            <div className="input-container">
+              <textarea
+                ref={textareaRef}
+                id="chat-input"
+                className="message-input"
+                placeholder="Describe tu síntoma o pregunta sobre tu cobertura…"
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                rows={1}
+                disabled={loading}
+              />
+              <button
+                id="send-btn"
+                className="send-btn"
+                onClick={() => send(input)}
+                disabled={!input.trim() || loading}
+                title="Enviar (Enter)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            </div>
+            <p className="input-hint">
+              Presiona <kbd className="kbd-hint">Enter</kbd> para enviar ·{" "}
+              <kbd className="kbd-hint">Shift+Enter</kbd> para salto de línea
+            </p>
           </div>
-          <p className="input-hint">
-            Presiona <kbd className="kbd-hint">Enter</kbd> para enviar ·{" "}
-            <kbd className="kbd-hint">Shift+Enter</kbd> para salto de línea
-          </p>
-        </div>
+        )}
 
       </div>
     </>

@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     notion_db_patients: str = ""       # DB de pacientes / planes
     notion_db_hospitals: str = ""      # DB de red hospitalaria
     notion_db_copay: str = ""          # DB de tabla de copagos
-    # Modelo Groq a usar
-    groq_model: str = "llama-3.3-70b-versatile"
+    # Modelo Groq a usar (cambiamos a un modelo más rápido y con mayor límite gratuito)
+    groq_model: str = "llama-3.1-8b-instant"
     # CORS (Separados por comas en el .env)
     cors_origins: Union[str, list[str]] = [
         "http://localhost:5173", 

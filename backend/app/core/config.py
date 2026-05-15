@@ -1,4 +1,5 @@
 """Variables de entorno (Groq, Notion, etc.)."""
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -18,6 +19,13 @@ class Settings(BaseSettings):
         "https://app.agno.com",
         "https://os.agno.com"
     ]
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v):
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",")]
+        return v
 
     class Config:
         env_file = ".env"

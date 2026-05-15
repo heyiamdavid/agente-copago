@@ -265,7 +265,7 @@ export function ChatPage() {
                 />
                 <button
                   id="patient-id-submit"
-                  className="send-btn id-submit-btn"
+                  className="id-submit-btn"
                   onClick={() => {
                     const input = document.getElementById("patient-id-input") as HTMLInputElement;
                     if (input?.value.trim()) {

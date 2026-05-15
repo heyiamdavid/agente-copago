@@ -252,7 +252,9 @@ export function ChatPage() {
               </p>
               <div className="welcome-login-box">
                 <input
+                  id="patient-id-input"
                   type="text"
+                  inputMode="numeric"
                   className="patient-bar-input welcome-input"
                   placeholder="Ej: 0923847582"
                   onKeyDown={(e) => {
@@ -261,8 +263,20 @@ export function ChatPage() {
                     }
                   }}
                 />
+                <button
+                  id="patient-id-submit"
+                  className="send-btn id-submit-btn"
+                  onClick={() => {
+                    const input = document.getElementById("patient-id-input") as HTMLInputElement;
+                    if (input?.value.trim()) {
+                      setSession((s) => ({ ...s, patientId: input.value.trim() }));
+                    }
+                  }}
+                >
+                  Continuar →
+                </button>
                 <p className="input-hint text-center">
-                  Escribe tu ID y presiona <kbd className="kbd-hint">Enter</kbd> para comenzar
+                  Escribe tu ID y presiona <kbd className="kbd-hint">Enter</kbd> o el botón
                 </p>
               </div>
             </div>

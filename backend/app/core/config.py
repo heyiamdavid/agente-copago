@@ -1,4 +1,5 @@
 """Variables de entorno (Groq, Notion, etc.)."""
+from typing import Union
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
@@ -13,7 +14,7 @@ class Settings(BaseSettings):
     # Modelo Groq a usar
     groq_model: str = "llama-3.3-70b-versatile"
     # CORS (Separados por comas en el .env)
-    cors_origins: list[str] = [
+    cors_origins: Union[str, list[str]] = [
         "http://localhost:5173", 
         "http://127.0.0.1:5173",
         "https://app.agno.com",

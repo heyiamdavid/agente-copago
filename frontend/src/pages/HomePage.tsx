@@ -19,14 +19,14 @@ export function HomePage() {
   }, []);
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1rem" }}>
-      <h1 style={{ fontSize: "1.5rem", fontWeight: 700 }}>
+    <main className="home-page-main">
+      <h1 className="home-page-title">
         Estimador de copago y cobertura
       </h1>
-      <p style={{ color: "#475569" }}>
+      <p className="home-page-desc">
         Describe tu síntoma y conectaremos con tu plan para estimar copago y hospital en red.
       </p>
-      <p style={{ fontSize: "0.875rem", color: "#64748b" }}>
+      <p className="home-page-status">
         Backend:{" "}
         {backendOk === null && "comprobando…"}
         {backendOk === true && "en línea"}

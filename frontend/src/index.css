@@ -2,27 +2,27 @@
 
 /* ── Design Tokens ───────────────────────────────────────────────────────── */
 :root {
-  --bg-primary:    #0a0f1e;
-  --bg-secondary:  #0d1526;
-  --bg-card:       #111827;
-  --bg-input:      #1a2236;
-  --bg-hover:      #1e2d45;
+  --bg-primary:    #212842;
+  --bg-secondary:  #181D30;
+  --bg-card:       #2A3250;
+  --bg-input:      #1C2238;
+  --bg-hover:      #333D60;
 
-  --accent-primary:   #3b82f6;
-  --accent-secondary: #6366f1;
-  --accent-success:   #10b981;
-  --accent-warning:   #f59e0b;
-  --accent-danger:    #ef4444;
+  --accent-primary:   #F0E7D5;
+  --accent-secondary: #E6DCC6;
+  --accent-success:   #10B981;
+  --accent-warning:   #F59E0B;
+  --accent-danger:    #EF4444;
 
-  --text-primary:   #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted:     #475569;
+  --text-primary:   #F0E7D5;
+  --text-secondary: #C3BBAD;
+  --text-muted:     #969085;
 
-  --border-subtle: rgba(59, 130, 246, 0.12);
-  --border-active: rgba(59, 130, 246, 0.5);
+  --border-subtle: rgba(240, 231, 213, 0.12);
+  --border-active: rgba(240, 231, 213, 0.5);
 
-  --glass-bg:     rgba(17, 24, 39, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-bg:     rgba(33, 40, 66, 0.8);
+  --glass-border: rgba(240, 231, 213, 0.06);
 
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
   --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
@@ -76,8 +76,8 @@ body {
 .glass-card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
 }
@@ -342,7 +342,9 @@ body {
   font-size: 0.875rem;
   line-height: 1.75;
   white-space: pre-wrap;
-  word-break: break-word;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 4rem;
 }
 
 .message-bubble.assistant {
@@ -354,9 +356,9 @@ body {
 
 .message-bubble.user {
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: #fff;
+  color: var(--bg-primary);
   border-bottom-right-radius: 4px;
-  box-shadow: 0 4px 15px rgba(59,130,246,0.3);
+  box-shadow: 0 4px 15px rgba(240, 231, 213, 0.15);
 }
 
 .message-time {
@@ -505,4 +507,25 @@ body {
   .header-title { font-size: 0.95rem; }
   .welcome-title { font-size: 1.4rem; }
   .message-bubble { max-width: 88%; }
+}
+
+/* ── HomePage specific ───────────────────────────────────────────────────── */
+.home-page-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.home-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.home-page-desc {
+  color: var(--text-secondary);
+}
+
+.home-page-status {
+  font-size: 0.875rem;
+  color: var(--text-muted);
 }

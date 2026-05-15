@@ -89,10 +89,9 @@ def build_agent(session_id: str | None = None) -> Agent:
         model=Groq(
             id=settings.groq_model,
             api_key=settings.groq_api_key,
-            temperature=1,
-            top_p=1,
+            temperature=0.2,
+            top_p=0.9,
             max_tokens=1024,
-            request_params={"reasoning_effort": "medium"},
         ),
         system_message=SYSTEM_PROMPT,
         tools=[

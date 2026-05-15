@@ -7,6 +7,9 @@
     "preview": "npm run preview --prefix frontend"
   },
   "dependencies": {
-    "pnp": "^0.0.3"
+    "all": "^0.0.0",
+    "pnp": "^0.0.3",
+    "tsc": "^2.0.4",
+    "vite": "^8.0.13"
   }
 }

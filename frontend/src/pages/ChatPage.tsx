@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { KeyboardEvent, ChangeEvent } from "react";
+import type { KeyboardEvent } from "react";
 import { sendChatMessage, checkBackendHealth } from "@/services/api";
 import type { Message, Session } from "@/types";
 import morganAvatar from "@/assets/asistente_morgan.png";

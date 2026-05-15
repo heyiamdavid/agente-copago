@@ -13,7 +13,7 @@ import logging
 
 from agno.agent import Agent
 from agno.models.groq import Groq
-from agno.storage.agent.sqlite import SqliteAgentStorage
+from agno.db.sqlite import SqliteDb
 
 from app.agent.prompts.system_prompt import SYSTEM_PROMPT
 from app.core.config import settings
@@ -99,8 +99,8 @@ def build_agent(session_id: str | None = None) -> Agent:
             calculate_copay_tool,
             get_network_hospitals_tool,
         ],
-        storage=SqliteAgentStorage(table_name="agent_sessions", db_file="agent_storage.db"),
-        add_history_to_messages=True,
+        db=SqliteDb(table_name="agent_sessions", db_file="agent_storage.db"),
+        add_history_to_context=True,
         markdown=False,
         session_id=session_id,
     )

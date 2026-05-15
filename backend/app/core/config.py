@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     groq_model: str = "llama-3.1-8b-instant"
     # Integraciones de mensajería (opcionales)
     telegram_bot_token: str = ""
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_from_number: str = "whatsapp:+14155238886"  # Sandbox por defecto
     # CORS (Separados por comas en el .env)
     cors_origins: Union[str, list[str]] = [
         "http://localhost:5173", 

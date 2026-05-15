@@ -11,3 +11,4 @@ notion-client>=2.2.1
 # Dependencias de base de datos para Agno
 sqlalchemy>=2.0.0
 aiosqlite>=0.20.0
+twilio>=9.0.0

@@ -54,10 +54,23 @@ function MessageBubble({ msg }: MessageBubbleProps) {
 /* ── Main component ──────────────────────────────────────────────────────── */
 
 export function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = localStorage.getItem("copay_messages");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Restaurar las fechas de string a objeto Date
+        return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
+      } catch { }
+    }
+    return [];
+  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [session, setSession] = useState<Session>({ id: null, patientId: null });
+  const [session, setSession] = useState<Session>(() => {
+    const saved = localStorage.getItem("copay_session");
+    return saved ? JSON.parse(saved) : { id: null, patientId: null };
+  });
   const [backendStatus, setBackendStatus] = useState<"checking" | "online" | "offline">("checking");
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -69,6 +82,15 @@ export function ChatPage() {
       setBackendStatus(ok ? "online" : "offline")
     );
   }, []);
+
+  /* Guardar sesión y mensajes localmente */
+  useEffect(() => {
+    localStorage.setItem("copay_messages", JSON.stringify(messages));
+  }, [messages]);
+
+  useEffect(() => {
+    localStorage.setItem("copay_session", JSON.stringify(session));
+  }, [session]);
 
   /* Auto-scroll */
   useEffect(() => {
@@ -149,6 +171,7 @@ export function ChatPage() {
   const resetChat = () => {
     setMessages([]);
     setSession({ id: null, patientId: session.patientId });
+    localStorage.removeItem("copay_messages");
   };
 
   return (

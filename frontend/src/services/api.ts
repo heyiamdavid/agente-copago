@@ -75,8 +75,10 @@ export interface EstimateResponse {
 
 export async function checkBackendHealth(): Promise<boolean> {
   try {
-    const data = await getJson<{ status?: string }>("/health");
-    return data.status === "ok";
+    const res = await fetch(`${BASE}/health`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.ok;
   } catch {
     return false;
   }

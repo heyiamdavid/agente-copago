@@ -18,8 +18,8 @@ except ImportError:
 from app.agent.prompts.system_prompt import SYSTEM_PROMPT
 from app.core.config import settings
 from app.integrations.notion import (
-    calculate_copay_for_plan,
     create_patient_in_notion,
+    get_copay_for_plan,
     get_hospitals_by_specialty,
     get_patient_plan,
 )
@@ -39,7 +39,7 @@ async def get_patient_plan_tool(patient_id: str) -> str:
 async def calculate_copay_tool(patient_id: str, especialidad: str) -> str:
     plan = await get_patient_plan(patient_id)
     if not plan: return "Paciente no encontrado."
-    res = await calculate_copay_for_plan(plan["plan_nombre"], especialidad)
+    res = await get_copay_for_plan(plan["plan_nombre"], especialidad)
     return json.dumps(res, ensure_ascii=False)
 
 async def get_network_hospitals_tool(especialidad: str, user_lat: float = None, user_lon: float = None) -> str:

@@ -104,21 +104,20 @@ async def get_patient_plan(patient_id: str) -> dict | None:
     rows = await _query_database(
         settings.notion_db_patients,
         filter_body={
-            "property": "patient_id",
-            "title": {"equals": patient_id},
+            "property": "PatientID",
+            "rich_text": {"equals": patient_id},
         },
     )
     if not rows:
         return None
     p = rows[0]
     return {
-        "patient_id": _text_prop(p, "patient_id"),
-        "nombre": _text_prop(p, "nombre"),
-        "plan_id": _text_prop(p, "plan_id"),
-        "plan_nombre": _text_prop(p, "plan_nombre"),
-        "deducible_anual": _number_prop(p, "deducible_anual"),
-        "deducible_cubierto": _number_prop(p, "deducible_cubierto"),
-        "copago_base": _number_prop(p, "copago_base"),
+        "patient_id": _text_prop(p, "PatientID"),
+        "nombre": _text_prop(p, "Nombre 1"),
+        "plan_nombre": _text_prop(p, "Plan 1"),  # Notion Relation / Text
+        "deducible_anual": _number_prop(p, "Deducible Anual"),
+        "deducible_cubierto": _number_prop(p, "Deducible Cubierto"),
+        "copago_base": 0, # Se obtiene de la tabla de copagos
     }
 
 
@@ -132,13 +131,11 @@ async def create_patient_in_notion(patient_id: str, nombre: str, plan_nombre: st
     body = {
         "parent": {"database_id": settings.notion_db_patients},
         "properties": {
-            "patient_id": {"title": [{"text": {"content": patient_id}}]},
-            "nombre": {"rich_text": [{"text": {"content": nombre}}]},
-            "plan_id": {"rich_text": [{"text": {"content": "PLAN_NUEVO"}}]},
-            "plan_nombre": {"rich_text": [{"text": {"content": plan_nombre}}]},
-            "deducible_anual": {"number": 0},
-            "deducible_cubierto": {"number": 0},
-            "copago_base": {"number": 0},
+            "Nombre 1": {"title": [{"text": {"content": nombre}}]},
+            "PatientID": {"rich_text": [{"text": {"content": patient_id}}]},
+            "Plan 1": {"rich_text": [{"text": {"content": plan_nombre}}]},
+            "Deducible Anual": {"number": 0},
+            "Deducible Cubierto": {"number": 0},
         }
     }
 
@@ -159,20 +156,32 @@ async def get_copay_for_plan(plan_id: str, especialidad: str) -> dict | None:
         settings.notion_db_copay,
         filter_body={
             "and": [
-                {"property": "plan_id", "title": {"equals": plan_id}},
-                {"property": "especialidad", "rich_text": {"equals": especialidad}},
+                {"property": "Plan", "title": {"equals": plan_id}},
+                {"property": "Especialidad", "select": {"equals": especialidad}},
             ]
         },
     )
     if not rows:
+        # Fallback si Especialidad no es select sino rich_text
+        rows = await _query_database(
+            settings.notion_db_copay,
+            filter_body={
+                "and": [
+                    {"property": "Plan", "title": {"equals": plan_id}},
+                    {"property": "Especialidad", "rich_text": {"equals": especialidad}},
+                ]
+            },
+        )
+
+    if not rows:
         return None
     r = rows[0]
     return {
-        "plan_id": _text_prop(r, "plan_id"),
-        "especialidad": _text_prop(r, "especialidad"),
-        "copago_fijo": _number_prop(r, "copago_fijo"),
-        "copago_porcentaje": _number_prop(r, "copago_porcentaje"),
-        "tope_bolsillo": _number_prop(r, "tope_bolsillo"),
+        "plan_id": _text_prop(r, "Plan"),
+        "especialidad": _text_prop(r, "Especialidad") or _select_prop(r, "Especialidad"),
+        "copago_fijo": _number_prop(r, "Copago Fijo"),
+        "copago_porcentaje": _number_prop(r, "Cobertura %"),
+        "requiere_referencia": _checkbox_prop(r, "Requiere Referencia"),
     }
 
 
@@ -194,12 +203,15 @@ async def get_hospitals_by_specialty(especialidad: str) -> list[dict]:
     for r in rows:
         hospitals.append(
             {
-                "hospital_id": _text_prop(r, "hospital_id"),
-                "nombre": _text_prop(r, "nombre"),
-                "ciudad": _text_prop(r, "ciudad"),
-                "nivel": _select_prop(r, "nivel"),
-                "especialidades": _multi_select_prop(r, "especialidades"),
-                "en_red": _checkbox_prop(r, "en_red"),
+                "hospital_id": _text_prop(r, "Nombre"),
+                "nombre": _text_prop(r, "Nombre"),
+                "ciudad": _select_prop(r, "Ciudad"),
+                "direccion": _text_prop(r, "Dirección"),
+                "nivel": _select_prop(r, "Nivel"),
+                "especialidades": _multi_select_prop(r, "Especialidades"),
+                "en_red": _checkbox_prop(r, "En Red"),
+                "latitud": _number_prop(r, "Latitud"),
+                "longitud": _number_prop(r, "Longitud"),
             }
         )
     return hospitals

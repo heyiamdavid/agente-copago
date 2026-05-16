@@ -34,7 +34,7 @@ async def calculate_copay(
             "hospitales": [],
         }
 
-    plan_id = patient.get("plan_id", "")
+    plan_id = patient.get("plan_nombre", "") # En Notion el Relation usa el nombre
     copay_info = await get_copay_for_plan(plan_id, especialidad)
     hospitales = await get_hospitals_by_specialty(especialidad)
 
@@ -42,20 +42,20 @@ async def calculate_copay(
     monto_copago: float | None = None
     if copay_info:
         copago_fijo = copay_info.get("copago_fijo") or 0.0
-        copago_porcentaje = copay_info.get("copago_porcentaje") or 0.0
-        tope = copay_info.get("tope_bolsillo")
+        # Cobertura % es lo que paga el seguro (ej: 80%)
+        cobertura_pct = copay_info.get("copago_porcentaje") or 0.0
+        # El copago es lo que NO paga el seguro
+        copago_pct = 100.0 - cobertura_pct
 
         if copago_fijo > 0:
             monto_copago = copago_fijo
-        elif copago_porcentaje > 0 and costo_estimado:
-            monto_copago = round(costo_estimado * (copago_porcentaje / 100), 2)
-            if tope and monto_copago > tope:
-                monto_copago = tope
+        elif copago_pct > 0 and costo_estimado:
+            monto_copago = round(costo_estimado * (copago_pct / 100), 2)
+        elif copago_pct > 0:
+            # Si no hay costo estimado, devolvemos el porcentaje de copago como referencia
+            monto_copago = copago_pct
         else:
-            # Usar copago_base del plan como fallback
-            base_pct = patient.get("copago_base") or 20.0
-            if costo_estimado:
-                monto_copago = round(costo_estimado * (base_pct / 100), 2)
+            monto_copago = 0.0
 
     return {
         "patient": patient,

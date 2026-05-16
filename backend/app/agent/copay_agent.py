@@ -1,11 +1,4 @@
-"""Orquestación del agente: síntoma → especialidad → herramientas de copago/red.
-
-Usa el framework Agno con el modelo Groq openai/gpt-oss-120b.
-El agente tiene tres herramientas:
-  - get_patient_plan_tool     → obtiene datos del plan desde Notion
-  - calculate_copay_tool      → calcula el copago real
-  - get_network_hospitals_tool → lista hospitales en red
-"""
+"""Agente Morgan: Orquestador de la lógica con Agno."""
 from __future__ import annotations
 
 import json
@@ -13,157 +6,68 @@ import logging
 
 from agno.agent import Agent
 from agno.models.groq import Groq
-from agno.db.sqlite import SqliteDb
+# Corregimos la importación según la estructura real de Agno
+try:
+    from agno.storage.agent.sqlite import SqliteAgentStorage as SqliteDb
+except ImportError:
+    try:
+        from agno.storage.agent.sqlite import SqliteDb
+    except ImportError:
+        SqliteDb = None
 
 from app.agent.prompts.system_prompt import SYSTEM_PROMPT
 from app.core.config import settings
 from app.integrations.notion import (
-    get_copay_for_plan,
+    calculate_copay_for_plan,
+    create_patient_in_notion,
     get_hospitals_by_specialty,
     get_patient_plan,
-    create_patient_in_notion,
 )
 from app.services.hospital_network import rank_hospitals
-from app.services.insurance import calculate_copay
 
 logger = logging.getLogger(__name__)
 
-# ── Herramientas para el agente ───────────────────────────────────────────────
-
+# Herramientas
 async def register_patient_tool(patient_id: str, nombre: str, plan_nombre: str) -> str:
-    """
-    Registra a un nuevo paciente en la base de datos de Notion.
-    Usa esta herramienta cuando un paciente intente consultar su cobertura
-    pero su ID no se encuentre en la base de datos.
-
-    Args:
-        patient_id: Número de identidad proporcionado por el usuario.
-        nombre: Nombre completo del paciente.
-        plan_nombre: Nombre del plan de seguro médico (ej. Bupa, Saludsa, etc).
-
-    Returns:
-        JSON con el resultado del registro.
-    """
     result = await create_patient_in_notion(patient_id, nombre, plan_nombre)
-    if result is None:
-        return json.dumps({"error": "No se pudo registrar al paciente debido a un error técnico."})
-    return json.dumps({"status": "success", "message": "Paciente registrado exitosamente.", "data": result}, ensure_ascii=False)
-
+    return f"¡Listo! {nombre} registrado." if result else "Error al registrar."
 
 async def get_patient_plan_tool(patient_id: str) -> str:
-    """
-    Obtiene el plan de seguro del paciente dado su ID.
+    plan = await get_patient_plan(patient_id)
+    return json.dumps(plan, ensure_ascii=False) if plan else "No encontrado."
 
-    Args:
-        patient_id: Identificador único del paciente.
+async def calculate_copay_tool(patient_id: str, especialidad: str) -> str:
+    plan = await get_patient_plan(patient_id)
+    if not plan: return "Paciente no encontrado."
+    res = await calculate_copay_for_plan(plan["plan_nombre"], especialidad)
+    return json.dumps(res, ensure_ascii=False)
 
-    Returns:
-        JSON con los datos del plan del paciente.
-    """
-    result = await get_patient_plan(patient_id)
-    if result is None:
-        return json.dumps({"error": f"No se encontró el paciente: {patient_id}. Por favor, pregúntale su nombre y plan para registrarlo usando register_patient_tool."})
-    return json.dumps(result, ensure_ascii=False)
+async def get_network_hospitals_tool(especialidad: str, user_lat: float = None, user_lon: float = None) -> str:
+    hospitals = await get_hospitals_by_specialty(especialidad)
+    ranked = rank_hospitals(hospitals, user_lat, user_lon)
+    return json.dumps(ranked, ensure_ascii=False)
 
-
-async def calculate_copay_tool(
-    patient_id: str,
-    especialidad: str,
-    costo_estimado: float | None = None,
-) -> str:
-    """
-    Calcula el copago estimado para un paciente en una especialidad médica.
-
-    Args:
-        patient_id: Identificador único del paciente.
-        especialidad: Especialidad médica (ej. 'Cardiología', 'Neurología').
-        costo_estimado: Costo estimado de la consulta en USD (opcional).
-
-    Returns:
-        JSON con los datos del copago calculado.
-    """
-    result = await calculate_copay(patient_id, especialidad, costo_estimado)
-    return json.dumps(result, ensure_ascii=False, default=str)
-
-
-async def get_network_hospitals_tool(especialidad: str, user_lat: float | None = None, user_lon: float | None = None) -> str:
-    """
-    Lista los hospitales en red que atienden una especialidad médica,
-    ordenados por cercanía geográfica (si se provee ubicación) y nivel.
-
-    Args:
-        especialidad: Especialidad médica a buscar.
-        user_lat: Latitud actual del usuario (opcional).
-        user_lon: Longitud actual del usuario (opcional).
-
-    Returns:
-        JSON con la lista de hospitales en red ordenados.
-    """
-    hospitales = await get_hospitals_by_specialty(especialidad)
-    ranked = rank_hospitals(hospitales, user_lat, user_lon)
-    return json.dumps(ranked, ensure_ascii=False, default=str)
-
-
-# ── Construcción del agente ───────────────────────────────────────────────────
-
-def build_agent(session_id: str | None = None) -> Agent:
-    """Construye y retorna un agente Agno con Groq, herramientas necesarias y persistencia en SQLite."""
+def build_agent(session_id: str = None) -> Agent:
+    storage = SqliteDb(table_name="agent_sessions", db_file="morgan.db") if SqliteDb else None
     return Agent(
-        model=Groq(
-            id=settings.groq_model,
-            api_key=settings.groq_api_key,
-            temperature=0.2,
-            top_p=0.9,
-            max_tokens=1024,
-        ),
+        model=Groq(id=settings.groq_model, api_key=settings.groq_api_key, temperature=0.1),
         system_message=SYSTEM_PROMPT,
-        tools=[
-            register_patient_tool,
-            get_patient_plan_tool,
-            calculate_copay_tool,
-            get_network_hospitals_tool,
-        ],
-        db=SqliteDb(db_file="agent_storage.db"),
+        tools=[register_patient_tool, get_patient_plan_tool, calculate_copay_tool, get_network_hospitals_tool],
+        storage=storage,
         add_history_to_context=True,
-        markdown=False,
         session_id=session_id,
     )
 
-
-async def run_chat(
-    message: str, 
-    session_id: str | None = None,
-    lat: float | None = None,
-    lon: float | None = None
-) -> dict:
-    """
-    Ejecuta un turno de conversación con el agente.
-
-    Args:
-        message: Mensaje del usuario.
-        session_id: ID de sesión para mantener contexto entre turnos.
-        lat: Latitud del usuario.
-        lon: Longitud del usuario.
-
-    Returns:
-        dict con 'response' (str) y 'session_id' (str).
-    """
-    # Si tenemos ubicación, la inyectamos sutilmente en el mensaje para que el agente la use
-    if lat and lon:
-        message = f"[UBICACIÓN ACTUAL: {lat}, {lon}]\n{message}"
-
+async def run_chat(message: str, session_id: str, patient_id: str = None, lat: float = None, lon: float = None) -> dict:
+    ctx = f"[PACIENTE: {patient_id} | GPS: {lat}, {lon}]\n" if patient_id or lat else ""
     agent = build_agent(session_id)
     try:
-        run_response = await agent.arun(message)
-        response_text = run_response.content if hasattr(run_response, "content") else str(run_response)
-    except Exception as exc:
-        logger.exception("Error en el agente: %s", exc)
-        response_text = (
-            "Lo siento, ocurrió un error al procesar tu solicitud. "
-            "Por favor intenta de nuevo."
-        )
-
-    return {
-        "response": response_text,
-        "session_id": agent.session_id or session_id,
-    }
+        resp = await agent.arun(ctx + message)
+        # Limpiamos posibles respuestas JSON de error que se cuelan como contenido
+        text = resp.content if hasattr(resp, "content") else str(resp)
+        if "rate_limit_exceeded" in text or "tokens_per_minute" in text:
+            text = "Morgan está procesando mucha información. Por favor, reintenta en 2 segundos. ⏳"
+        return {"response": text, "session_id": session_id}
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        return {"response": "Lo siento, Morgan tuvo un hipo técnico. ¡Reintenta ahora!", "session_id": session_id}

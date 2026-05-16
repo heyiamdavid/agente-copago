@@ -3,22 +3,6 @@
 El usuario configura las bases de datos de Notion.
 Este módulo consume la API REST de Notion y expone helpers
 tipados para el resto de la app.
-
-Estructura esperada por DB:
-──────────────────────────────────────────────────────────────
-NOTION_DB_PATIENTS   (tabla de pacientes / planes de seguro)
-  Columns: Nombre 1 (title), PatientID (rich_text), Plan 1 (relation/rich_text),
-           Deducible Anual, Deducible Cubierto
-
-NOTION_DB_HOSPITALS  (red hospitalaria)
-  Columns: Nombre (title), Ciudad (select), Dirección (rich_text),
-           Especialidades (multi-select), Nivel (select), En Red (checkbox),
-           Latitud (number), Longitud (number)
-
-NOTION_DB_COPAY      (tabla de copagos por plan × especialidad)
-  Columns: Plan (title), Especialidad (select/rich_text), Copago Fijo,
-           Cobertura %, Requiere Referencia (checkbox)
-──────────────────────────────────────────────────────────────
 """
 from __future__ import annotations
 
@@ -123,12 +107,18 @@ async def get_patient_plan(patient_id: str) -> dict | None:
 
 
 async def create_patient_in_notion(patient_id: str, nombre: str, plan_nombre: str) -> dict | None:
-    """Crea una nueva fila en la base de datos de pacientes de Notion."""
+    """Crea una nueva fila en la base de datos de pacientes de Notion, evitando duplicados."""
     if not settings.notion_db_patients:
         logger.warning("Notion DB ID not configured; cannot create patient.")
         return None
 
-    # Intentar buscar el ID del plan en la DB de copagos para crear la relación
+    # 1. VERIFICACIÓN ANTI-DUPLICADOS: Ver si el paciente ya existe antes de crear
+    existing = await get_patient_plan(patient_id)
+    if existing:
+        logger.info(f"El paciente {patient_id} ya existe. Saltando creación.")
+        return existing
+
+    # 2. Buscar el ID del plan para la relación
     plan_page_id = None
     try:
         plan_rows = await _query_database(
@@ -144,7 +134,6 @@ async def create_patient_in_notion(patient_id: str, nombre: str, plan_nombre: st
         logger.warning(f"No se pudo encontrar el ID del plan '{plan_nombre}': {e}")
 
     url = f"{NOTION_API_BASE}/pages"
-    
     properties = {
         "Nombre 1": {"title": [{"text": {"content": nombre}}]},
         "PatientID": {"rich_text": [{"text": {"content": patient_id}}]},
@@ -166,7 +155,6 @@ async def create_patient_in_notion(patient_id: str, nombre: str, plan_nombre: st
         try:
             resp = await client.post(url, headers=_headers(), json=body)
             if resp.status_code == 400 and "relation" in resp.text:
-                # Si falló porque no es relación, intentar como rich_text
                 properties["Plan 1"] = {"rich_text": [{"text": {"content": plan_nombre}}]}
                 resp = await client.post(url, headers=_headers(), json={"parent": {"database_id": settings.notion_db_patients}, "properties": properties})
             
@@ -174,10 +162,7 @@ async def create_patient_in_notion(patient_id: str, nombre: str, plan_nombre: st
             logger.info(f"Paciente {patient_id} registrado exitosamente en Notion.")
             return await get_patient_plan(patient_id)
         except Exception as e:
-            error_detail = ""
-            if hasattr(e, 'response') and e.response:
-                error_detail = f" - Detalle: {e.response.text}"
-            logger.error(f"Error creando paciente en Notion: {e}{error_detail}")
+            logger.error(f"Error creando paciente en Notion: {e}")
             return None
 
 
@@ -222,10 +207,10 @@ async def get_hospitals_by_specialty(especialidad: str) -> list[dict]:
         filter_body={
             "and": [
                 {
-                    "property": "especialidades",
+                    "property": "Especialidades",
                     "multi_select": {"contains": especialidad},
                 },
-                {"property": "en_red", "checkbox": {"equals": True}},
+                {"property": "En Red", "checkbox": {"equals": True}},
             ]
         },
     )

@@ -16,6 +16,8 @@ class ChatRequest(BaseModel):
         default=None,
         description="ID del paciente (opcional, el agente lo pedirá si no se provee).",
     )
+    lat: float | None = Field(default=None, description="Latitud del usuario.")
+    lon: float | None = Field(default=None, description="Longitud del usuario.")
 
 
 class EstimateRequest(BaseModel):

@@ -26,6 +26,8 @@ export interface ChatRequest {
   message: string;
   session_id?: string | null;
   patient_id?: string | null;
+  lat?: number;
+  lon?: number;
 }
 
 export interface ChatResponse {

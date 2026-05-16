@@ -86,19 +86,21 @@ async def calculate_copay_tool(
     return json.dumps(result, ensure_ascii=False, default=str)
 
 
-async def get_network_hospitals_tool(especialidad: str) -> str:
+async def get_network_hospitals_tool(especialidad: str, user_lat: float | None = None, user_lon: float | None = None) -> str:
     """
     Lista los hospitales en red que atienden una especialidad médica,
-    ordenados del más al menos conveniente económicamente.
+    ordenados por cercanía geográfica (si se provee ubicación) y nivel.
 
     Args:
         especialidad: Especialidad médica a buscar.
+        user_lat: Latitud actual del usuario (opcional).
+        user_lon: Longitud actual del usuario (opcional).
 
     Returns:
-        JSON con la lista de hospitales en red.
+        JSON con la lista de hospitales en red ordenados.
     """
     hospitales = await get_hospitals_by_specialty(especialidad)
-    ranked = rank_hospitals(hospitales)
+    ranked = rank_hospitals(hospitales, user_lat, user_lon)
     return json.dumps(ranked, ensure_ascii=False, default=str)
 
 
@@ -128,17 +130,28 @@ def build_agent(session_id: str | None = None) -> Agent:
     )
 
 
-async def run_chat(message: str, session_id: str | None = None) -> dict:
+async def run_chat(
+    message: str, 
+    session_id: str | None = None,
+    lat: float | None = None,
+    lon: float | None = None
+) -> dict:
     """
     Ejecuta un turno de conversación con el agente.
 
     Args:
         message: Mensaje del usuario.
         session_id: ID de sesión para mantener contexto entre turnos.
+        lat: Latitud del usuario.
+        lon: Longitud del usuario.
 
     Returns:
         dict con 'response' (str) y 'session_id' (str).
     """
+    # Si tenemos ubicación, la inyectamos sutilmente en el mensaje para que el agente la use
+    if lat and lon:
+        message = f"[UBICACIÓN ACTUAL: {lat}, {lon}]\n{message}"
+
     agent = build_agent(session_id)
     try:
         run_response = await agent.arun(message)

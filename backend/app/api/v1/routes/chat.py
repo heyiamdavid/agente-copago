@@ -19,7 +19,12 @@ async def chat_message(body: ChatRequest) -> ChatResponse:
         message = f"[Mi ID de paciente es: {body.patient_id}]\n{message}"
 
     try:
-        result = await run_chat(message, session_id=body.session_id)
+        result = await run_chat(
+            message, 
+            session_id=body.session_id,
+            lat=body.lat,
+            lon=body.lon
+        )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

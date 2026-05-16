@@ -79,6 +79,7 @@ export function ChatPage() {
     return saved ? JSON.parse(saved) : { id: null, patientId: null };
   });
   const [backendStatus, setBackendStatus] = useState<"checking" | "online" | "offline">("checking");
+  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -88,6 +89,18 @@ export function ChatPage() {
     checkBackendHealth().then((ok) =>
       setBackendStatus(ok ? "online" : "offline")
     );
+
+    // Solicitar ubicación al cargar si el navegador lo permite
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+          console.log("Ubicación obtenida:", pos.coords.latitude, pos.coords.longitude);
+        },
+        (err) => console.warn("Error de geolocalización:", err.message),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
   }, []);
 
   /* Guardar sesión y mensajes localmente */
@@ -136,6 +149,8 @@ export function ChatPage() {
           message: trimmed,
           session_id: session.id,
           patient_id: session.patientId || undefined,
+          lat: location?.lat,
+          lon: location?.lon,
         });
 
         const botMsg: Message = {

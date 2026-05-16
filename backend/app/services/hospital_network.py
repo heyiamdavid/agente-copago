@@ -86,14 +86,20 @@ def rank_hospitals(
         h_lon = h.get("longitud")
         if user_lat and user_lon and h_lat and h_lon:
             h["distancia_km"] = round(haversine(user_lat, user_lon, h_lat, h_lon), 2)
+            # Generar URL de Google Maps
+            h["maps_url"] = f"https://www.google.com/maps/search/?api=1&query={h_lat},{h_lon}"
         else:
             h["distancia_km"] = None
+            h["maps_url"] = None
 
     # Ordenar: primero los que tienen distancia (más cercanos), luego por nivel
-    return sorted(
+    sorted_hospitals = sorted(
         hospitales, 
         key=lambda h: (
             h["distancia_km"] if h["distancia_km"] is not None else 9999,
             level_order.get(h.get("nivel"), 99)
         )
     )
+    
+    # Retornar solo los 5 más cercanos
+    return sorted_hospitals[:5]

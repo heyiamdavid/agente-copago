@@ -19,6 +19,29 @@ const QUICK_CHIPS = [
   "Dolor de rodilla, posible fractura",
 ];
 
+function validarCedulaEcuador(cedula: string): boolean {
+  if (cedula.length !== 10) return false;
+  const prov = parseInt(cedula.substring(0, 2));
+  if (prov < 1 || prov > 24) return false;
+  const d3 = parseInt(cedula[2]);
+  if (d3 > 5) return false;
+
+  const digitos = cedula.split("").map(Number);
+  const verificador = digitos.pop();
+  let suma = 0;
+  for (let i = 0; i < digitos.length; i++) {
+    let p = digitos[i];
+    if (i % 2 === 0) {
+      p *= 2;
+      if (p > 9) p -= 9;
+    }
+    suma += p;
+  }
+  const residuo = suma % 10;
+  const resultado = residuo === 0 ? 0 : 10 - residuo;
+  return resultado === verificador;
+}
+
 /* ── Sub-components ──────────────────────────────────────────────────────── */
 
 function TypingIndicator() {
@@ -283,8 +306,13 @@ export function ChatPage() {
                   className="id-submit-btn"
                   onClick={() => {
                     const input = document.getElementById("patient-id-input") as HTMLInputElement;
-                    if (input?.value.trim()) {
-                      setSession((s) => ({ ...s, patientId: input.value.trim() }));
+                    const val = input?.value.trim();
+                    if (val) {
+                      if (validarCedulaEcuador(val)) {
+                        setSession((s) => ({ ...s, patientId: val }));
+                      } else {
+                        alert("⚠️ Cédula inválida. Por favor ingresa un número de cédula de Ecuador real.");
+                      }
                     }
                   }}
                 >

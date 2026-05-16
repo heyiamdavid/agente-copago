@@ -407,15 +407,44 @@ body {
 }
 
 .message-bubble {
-  max-width: min(75%, 680px);
+  max-width: min(85%, 680px);
   padding: 0.875rem 1.125rem;
   border-radius: var(--radius-md);
   font-size: 0.875rem;
   line-height: 1.75;
-  white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: break-word;
   min-width: 4rem;
+}
+
+.message-bubble p {
+  margin-bottom: 0.75rem;
+}
+
+.message-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.message-bubble ul, .message-bubble ol {
+  margin-left: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-link {
+  color: var(--accent-success);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.markdown-link:hover {
+  opacity: 0.8;
+  filter: brightness(1.2);
+}
+
+.message-bubble.user .markdown-link {
+  color: var(--bg-primary);
 }
 
 .message-bubble.assistant {

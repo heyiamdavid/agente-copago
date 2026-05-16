@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
 import type { KeyboardEvent, ChangeEvent } from "react";
 import { sendChatMessage, checkBackendHealth } from "@/services/api";
 import type { Message, Session } from "@/types";
@@ -74,7 +75,11 @@ function MessageBubble({ msg }: MessageBubbleProps) {
         )}
       </div>
       <div>
-        <div className={`message-bubble ${msg.role}`}>{msg.content}</div>
+        <div className={`message-bubble ${msg.role}`}>
+          <ReactMarkdown components={{ a: (props) => <a {...props} target="_blank" rel="noopener noreferrer" className="markdown-link" /> }}>
+            {msg.content}
+          </ReactMarkdown>
+        </div>
         <div className="message-time">{formatTime(msg.timestamp)}</div>
       </div>
     </div>

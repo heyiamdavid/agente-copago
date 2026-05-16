@@ -291,7 +291,7 @@ export function ChatPage() {
                   Continuar →
                 </button>
                 <p className="input-hint text-center">
-                  Escribe tu ID y presiona <kbd className="kbd-hint">Enter</kbd> o el botón
+                  Escribe tu C.I y presiona <kbd className="kbd-hint">Enter</kbd> o el botón
                 </p>
               </div>
             </div>

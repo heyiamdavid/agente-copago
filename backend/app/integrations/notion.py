@@ -7,16 +7,17 @@ tipados para el resto de la app.
 Estructura esperada por DB:
 ──────────────────────────────────────────────────────────────
 NOTION_DB_PATIENTS   (tabla de pacientes / planes de seguro)
-  Columns: patient_id (title), nombre, plan_id, plan_nombre,
-           deducible_anual, deducible_cubierto, copago_base (%)
+  Columns: Nombre 1 (title), PatientID (rich_text), Plan 1 (relation/rich_text),
+           Deducible Anual, Deducible Cubierto
 
 NOTION_DB_HOSPITALS  (red hospitalaria)
-  Columns: hospital_id (title), nombre, ciudad, especialidades
-           (multi-select), nivel (select: A/B/C), en_red (checkbox)
+  Columns: Nombre (title), Ciudad (select), Dirección (rich_text),
+           Especialidades (multi-select), Nivel (select), En Red (checkbox),
+           Latitud (number), Longitud (number)
 
 NOTION_DB_COPAY      (tabla de copagos por plan × especialidad)
-  Columns: plan_id (title), especialidad, copago_fijo,
-           copago_porcentaje, tope_bolsillo
+  Columns: Plan (title), Especialidad (select/rich_text), Copago Fijo,
+           Cobertura %, Requiere Referencia (checkbox)
 ──────────────────────────────────────────────────────────────
 """
 from __future__ import annotations
@@ -114,10 +115,10 @@ async def get_patient_plan(patient_id: str) -> dict | None:
     return {
         "patient_id": _text_prop(p, "PatientID"),
         "nombre": _text_prop(p, "Nombre 1"),
-        "plan_nombre": _text_prop(p, "Plan 1"),  # Notion Relation / Text
+        "plan_nombre": _text_prop(p, "Plan 1") or _select_prop(p, "Plan 1"),  
         "deducible_anual": _number_prop(p, "Deducible Anual"),
         "deducible_cubierto": _number_prop(p, "Deducible Cubierto"),
-        "copago_base": 0, # Se obtiene de la tabla de copagos
+        "copago_base": 0,
     }
 
 
@@ -127,26 +128,56 @@ async def create_patient_in_notion(patient_id: str, nombre: str, plan_nombre: st
         logger.warning("Notion DB ID not configured; cannot create patient.")
         return None
 
+    # Intentar buscar el ID del plan en la DB de copagos para crear la relación
+    plan_page_id = None
+    try:
+        plan_rows = await _query_database(
+            settings.notion_db_copay,
+            filter_body={
+                "property": "Plan",
+                "title": {"equals": plan_nombre}
+            }
+        )
+        if plan_rows:
+            plan_page_id = plan_rows[0].get("id")
+    except Exception as e:
+        logger.warning(f"No se pudo encontrar el ID del plan '{plan_nombre}': {e}")
+
     url = f"{NOTION_API_BASE}/pages"
+    
+    properties = {
+        "Nombre 1": {"title": [{"text": {"content": nombre}}]},
+        "PatientID": {"rich_text": [{"text": {"content": patient_id}}]},
+        "Deducible Anual": {"number": 0},
+        "Deducible Cubierto": {"number": 0},
+    }
+
+    if plan_page_id:
+        properties["Plan 1"] = {"relation": [{"id": plan_page_id}]}
+    else:
+        properties["Plan 1"] = {"rich_text": [{"text": {"content": plan_nombre}}]}
+
     body = {
         "parent": {"database_id": settings.notion_db_patients},
-        "properties": {
-            "Nombre 1": {"title": [{"text": {"content": nombre}}]},
-            "PatientID": {"rich_text": [{"text": {"content": patient_id}}]},
-            "Plan 1": {"rich_text": [{"text": {"content": plan_nombre}}]},
-            "Deducible Anual": {"number": 0},
-            "Deducible Cubierto": {"number": 0},
-        }
+        "properties": properties
     }
 
     async with httpx.AsyncClient(timeout=15) as client:
         try:
             resp = await client.post(url, headers=_headers(), json=body)
+            if resp.status_code == 400 and "relation" in resp.text:
+                # Si falló porque no es relación, intentar como rich_text
+                properties["Plan 1"] = {"rich_text": [{"text": {"content": plan_nombre}}]}
+                resp = await client.post(url, headers=_headers(), json={"parent": {"database_id": settings.notion_db_patients}, "properties": properties})
+            
             resp.raise_for_status()
             logger.info(f"Paciente {patient_id} registrado exitosamente en Notion.")
             return await get_patient_plan(patient_id)
         except Exception as e:
-            logger.error(f"Error creando paciente en Notion: {e}")
+            error_detail = ""
+            if hasattr(e, 'response') and e.response:
+                error_detail = f" - Detalle: {e.response.text}"
+            logger.error(f"Error creando paciente en Notion: {e}{error_detail}")
             return None
 
 
@@ -162,7 +193,6 @@ async def get_copay_for_plan(plan_id: str, especialidad: str) -> dict | None:
         },
     )
     if not rows:
-        # Fallback si Especialidad no es select sino rich_text
         rows = await _query_database(
             settings.notion_db_copay,
             filter_body={

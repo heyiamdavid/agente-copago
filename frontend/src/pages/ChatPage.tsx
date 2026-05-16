@@ -241,7 +241,7 @@ export function ChatPage() {
         {session.patientId && (
           <div className="patient-bar">
             <div className="patient-bar-inner">
-              <span className="patient-bar-label">ID Paciente</span>
+              <span className="patient-bar-label">C.I PACIENTE</span>
               <span className="patient-bar-input text-opacity-70">
                 {session.patientId}
               </span>

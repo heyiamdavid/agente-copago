@@ -6,8 +6,10 @@ import logging
 
 from agno.agent import Agent
 from agno.models.groq import Groq
-# En agno > 2.0.0, la persistencia se maneja de forma distinta, 
-# por lo que de momento ejecutamos el agente sin 'storage' para evitar el error de Render.
+try:
+    from agno.db.sqlite.sqlite import SqliteDb
+except ImportError:
+    SqliteDb = None
 
 from app.agent.prompts.system_prompt import SYSTEM_PROMPT
 from app.core.config import settings
@@ -42,10 +44,12 @@ async def get_network_hospitals_tool(especialidad: str, user_lat: float = None, 
     return json.dumps(ranked, ensure_ascii=False)
 
 def build_agent(session_id: str = None) -> Agent:
+    storage = SqliteDb(session_table="agent_sessions", db_file="morgan.db") if SqliteDb else None
     return Agent(
         model=Groq(id=settings.groq_model, api_key=settings.groq_api_key, temperature=0.1),
         system_message=SYSTEM_PROMPT,
         tools=[register_patient_tool, get_patient_plan_tool, calculate_copay_tool, get_network_hospitals_tool],
+        db=storage,
         add_history_to_context=True,
         session_id=session_id,
     )
